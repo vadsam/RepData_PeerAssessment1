@@ -1,5 +1,6 @@
 Reproducible Research: Peer Assessment 1
 =========================================
+This report is created using R markdown document and Knitr package using R studio. The solution for the various parts of the assignment is provided below. 
 
 ## Loading and preprocessing the data
 
@@ -111,4 +112,5 @@ DayType_Data <- aggregate(steps ~ interval + DayType, data=Fill_NA, mean)
 ggplot(data = DayType_Data, aes(x= interval, y=steps)) + geom_line() + facet_grid(DayType ~ .) + xlab("5-minute interval") + ylab("Number of steps")
 ```
 
-Activity during weekdays peak between noon to 4 PM and significantly drops after that. During weeknds, the activity remain more or less same between noon to 7 PM.
+- Activity during weekdays peak between noon to 4 PM and significantly drops after 4 PM
+- During weeknds, the activity remain more or less same between noon to 7 PM.
