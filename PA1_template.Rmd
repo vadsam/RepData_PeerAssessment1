@@ -1,21 +1,114 @@
-"Reproducible Research: Peer Assessment 1"
-====================================================
-
+Reproducible Research: Peer Assessment 1
+=========================================
 
 ## Loading and preprocessing the data
 
+- Load the ggplot package. We will be using this for generating all graphs related to this assignment.
 
+- Read the data from csv file and store it in a data frame
+
+```{r warning=FALSE}
+library(ggplot2)
+raw_data <- read.csv("activity.csv")
+```
 
 ## What is mean total number of steps taken per day?
 
+- `NA` values are omitted from the raw data set and total steps per day is calculated using the aggregate function
+- mean and median values are calculated from the aggregated data set
+- Graph created using ggplot with Date in x-axis and no. of steps in y-axis
 
+```{r}
+Clean_data <- na.omit(raw_data)
+
+steps_per_day <- aggregate(steps ~ date, data = Clean_data, sum)
+
+mean(steps_per_day$steps)
+
+median(steps_per_day$steps)
+
+ggplot(data = steps_per_day, aes(x = date, y = steps)) + geom_bar(stat =  "identity") + xlab("Days")+ylab("Steps")+theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
 
 ## What is the average daily activity pattern?
 
+- calculate the average number of steps per interval using the data set without `NA`
+- Use ggplot to generate graph with interval in x-axis and steps in y-axis
+- Identify the interval having max no. of steps from the data set created above
 
+```{r}
+Step_interval <- aggregate(steps ~ interval, data = Clean_data, mean)
+
+ggplot(data=Step_interval, aes(x=interval, y=steps)) + geom_line() + xlab("5-minute interval") + ylab("Average steps taken")
+
+Step_interval[Step_interval$steps == max(Step_interval$steps),1]
+
+```
 
 ## Imputing missing values
+- Create a new data frame and copy the data from raw_data
+- Check the no. of instance having `NA` in the steps column
+- Populate the `NA` instances for each day with mean no. of steps calculated for that day. If no mean value is available for a given day, populate zero for all `NA` instances on that day
+- After completing above step, rerun the code to check the `NA` occurance. This should return zero
 
+```{r}
+Fill_NA <- raw_data
 
+sum(is.na(Fill_NA))
+
+Step_Date <- aggregate(steps ~ date, data = raw_data, mean)
+
+for (i in 1:nrow(Fill_NA)) {
+      if (is.na(Fill_NA$steps[i])) {
+            if(length(Step_Date[which(Fill_NA$date[i] == Step_Date$date),]$steps) == 0){
+                  Fill_NA$steps[i] <- 0}
+            else{
+                  Fill_NA$steps[i] <- Step_Date[which(Fill_NA$date[i] == Step_Date$date),]$steps
+            }
+      }
+}
+
+sum(is.na(Fill_NA))
+```
+
+- Use the new data set and identify the mean no. of steps for each day
+- Calculate mean and median values from the aggregated data set
+- Plot histogram with date in x-axis and average steps in y-axis
+```{r}
+fill_steps_per_day <- aggregate(steps ~ date, data = Fill_NA, sum)
+
+mean(fill_steps_per_day$steps)
+
+median(fill_steps_per_day$steps)
+
+ggplot(data = fill_steps_per_day, aes(x = date, y = steps)) + geom_bar(stat =  "identity") + xlab("Days")+ylab("Steps")+theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+
+Comparing the mean and median for data set with `NA` values and after removing `NA` values, we can see that the mean and median have come down from the original value
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+- Use the weekdays() function derive the day for each date in the data set
+- Create a factor variable to group the days into weekends or weekdays
+- Add the factor variable to the data frame
+- Use ggplot to draw the graph with interval in x-axis and steps in y-axis. Use the daytype factor in facet_grid option to the split the steps across weekends/weekdays
+
+```{r}
+
+Fill_NA$Days <- weekdays(as.Date(Fill_NA$date))
+
+Fill_NA$DayType <- "NA"
+
+for (i in 1:nrow(Fill_NA)) {
+      if(Fill_NA$Days[i] %in% c("Saturday", "Sunday")) {Fill_NA$DayType[i] <- "Weekend"}
+            else {Fill_NA$DayType[i] <- "Weekday"}
+}
+
+Fill_NA$DayTypeFac <- factor(Fill_NA$DayType, levels = c("Weekday", "Weekend"))
+
+DayType_Data <- aggregate(steps ~ interval + DayType, data=Fill_NA, mean)
+
+ggplot(data = DayType_Data, aes(x= interval, y=steps)) + geom_line() + facet_grid(DayType ~ .) + xlab("5-minute interval") + ylab("Number of steps")
+```
+
+Activity during weekdays peak between noon to 4 PM and significantly drops after that. During weeknds, the activity remain more or less same between noon to 7 PM.
